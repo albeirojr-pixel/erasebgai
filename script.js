@@ -1,3 +1,6 @@
+// Import Gradio Client
+import { client } from "https://cdn.jsdelivr.net/npm/@gradio/client@0.10.1/dist/index.min.js";
+
 // Traducciones
 const translations = {
     en: {
@@ -165,7 +168,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Cambiar idioma
-function changeLanguage() {
+window.changeLanguage = function() {
     const lang = document.getElementById('lang-select').value;
     const trans = translations[lang];
     
@@ -176,10 +179,7 @@ function changeLanguage() {
         }
     }
     
-    // Cambiar idioma del HTML
     document.documentElement.lang = lang;
-    
-    // Actualizar meta tags
     document.querySelector('meta[name="description"]').content = trans['hero-desc'];
     document.title = trans['hero-title'];
 }
@@ -188,9 +188,24 @@ function changeLanguage() {
 // BACKGROUND REMOVAL FUNCTIONALITY
 // ============================================
 
-const HF_SPACE_URL = "https://albeirojr-pixel-removedor-fondo.hf.space";
+const HF_SPACE = "albeirojr-pixel/removedor-fondo";
 
 let selectedFile = null;
+let gradioApp = null;
+
+// Initialize Gradio client
+async function initGradioClient() {
+    if (!gradioApp) {
+        try {
+            gradioApp = await client(HF_SPACE);
+            console.log('Gradio client initialized');
+        } catch (error) {
+            console.error('Failed to initialize Gradio client:', error);
+            throw error;
+        }
+    }
+    return gradioApp;
+}
 
 // Elements
 const uploadArea = document.getElementById('upload-area');
@@ -239,13 +254,11 @@ uploadArea.addEventListener('drop', (e) => {
 function handleFile(file) {
     if (!file) return;
     
-    // Validate file type
     if (!file.type.match('image/(jpeg|jpg|png)')) {
         alert('Please upload a JPG or PNG image');
         return;
     }
     
-    // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
         alert('Image too large. Maximum size is 10MB');
         return;
@@ -253,7 +266,6 @@ function handleFile(file) {
     
     selectedFile = file;
     
-    // Show preview
     const reader = new FileReader();
     reader.onload = (e) => {
         previewImage.src = e.target.result;
@@ -284,33 +296,29 @@ function resetUpload() {
 processBtn.addEventListener('click', async () => {
     if (!selectedFile) return;
     
-    // Hide upload, show processing
     uploadArea.style.display = 'none';
     processBtn.style.display = 'none';
     processing.style.display = 'block';
     resultContainer.style.display = 'none';
     
     try {
-        // Call Hugging Face Gradio API
         const result = await removeBackground(selectedFile);
         
-        // Show results
         processing.style.display = 'none';
         resultContainer.style.display = 'block';
         
-        // Display original and result
         const originalReader = new FileReader();
         originalReader.onload = (e) => {
             originalImage.src = e.target.result;
         };
         originalReader.readAsDataURL(selectedFile);
         
-        resultImage.src = result;
-        downloadBtn.href = result;
+        resultImage.src = result.url;
+        downloadBtn.href = result.url;
         
     } catch (error) {
         console.error('Error:', error);
-        alert('Error processing image. Please try again.');
+        alert('Error processing image. The service might be starting up. Please try again in a moment.');
         resetInterface();
     }
 });
@@ -328,32 +336,14 @@ function resetInterface() {
     resetUpload();
 }
 
-// Call Hugging Face Gradio API
-// Call Hugging Face Gradio API
+// Call Hugging Face Gradio API using official client
 async function removeBackground(file) {
     try {
-        // Convertir archivo a base64
-        const base64 = await fileToBase64(file);
+        const app = await initGradioClient();
         
-        // Llamar al endpoint correcto de Gradio
-        const response = await fetch(`${HF_SPACE_URL}/run/predict`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                data: [base64]
-            })
-        });
+        const result = await app.predict("/predict", [file]);
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        // El resultado viene en result.data[0]
-        if (result.data && result.data[0]) {
+        if (result && result.data && result.data[0]) {
             return result.data[0];
         }
         
@@ -363,14 +353,4 @@ async function removeBackground(file) {
         console.error('API Error:', error);
         throw error;
     }
-}
-
-// Convertir archivo a base64
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
 }
