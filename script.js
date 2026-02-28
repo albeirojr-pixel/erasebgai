@@ -329,29 +329,32 @@ function resetInterface() {
 }
 
 // Call Hugging Face Gradio API
+// Call Hugging Face Gradio API
 async function removeBackground(file) {
-    const formData = new FormData();
-    formData.append('data', file);
-    
     try {
-        // Call Gradio API endpoint
-        const response = await fetch(`${HF_SPACE_URL}/api/predict`, {
+        // Convertir archivo a base64
+        const base64 = await fileToBase64(file);
+        
+        // Llamar al endpoint correcto de Gradio
+        const response = await fetch(`${HF_SPACE_URL}/run/predict`, {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                data: [base64]
+            })
         });
         
         if (!response.ok) {
-            throw new Error('API request failed');
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const result = await response.json();
         
-        // Gradio returns the image path in the data array
+        // El resultado viene en result.data[0]
         if (result.data && result.data[0]) {
-            // Get the full image URL
-            const imagePath = result.data[0];
-            const imageUrl = `${HF_SPACE_URL}/file=${imagePath}`;
-            return imageUrl;
+            return result.data[0];
         }
         
         throw new Error('Invalid API response');
@@ -360,4 +363,14 @@ async function removeBackground(file) {
         console.error('API Error:', error);
         throw error;
     }
+}
+
+// Convertir archivo a base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
