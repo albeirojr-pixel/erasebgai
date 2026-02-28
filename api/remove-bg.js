@@ -1,21 +1,26 @@
-export const config = {
-  runtime: 'edge',
-};
+export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-export default async function handler(request) {
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Solo permitir POST
-  if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Obtener el archivo del FormData
-    const formData = await request.formData();
-    const file = formData.get('image');
-
-    if (!file) {
-      return new Response('No image provided', { status: 400 });
+    // Obtener el body como buffer
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(chunk);
     }
+    const buffer = Buffer.concat(chunks);
 
     // Llamar a Hugging Face Inference API
     const response = await fetch(
@@ -23,10 +28,9 @@ export default async function handler(request) {
       {
         headers: {
           'Authorization': `Bearer ${process.env.HF_API_TOKEN}`,
-          'Content-Type': 'application/octet-stream',
         },
         method: 'POST',
-        body: file,
+        body: buffer,
       }
     );
 
@@ -35,25 +39,21 @@ export default async function handler(request) {
       console.error('HF API Error:', errorText);
       
       if (response.status === 503) {
-        return new Response('Model is loading, please retry in 20 seconds', { status: 503 });
+        return res.status(503).json({ error: 'Model is loading, please retry in 20 seconds' });
       }
       
-      return new Response('Processing failed', { status: response.status });
+      return res.status(response.status).json({ error: 'Processing failed' });
     }
 
     // Retornar la imagen procesada
-    const imageBlob = await response.blob();
+    const imageBuffer = await response.arrayBuffer();
     
-    return new Response(imageBlob, {
-      status: 200,
-      headers: {
-        'Content-Type': 'image/png',
-        'Cache-Control': 'no-cache',
-      },
-    });
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.status(200).send(Buffer.from(imageBuffer));
 
   } catch (error) {
     console.error('API Route Error:', error);
-    return new Response('Internal server error', { status: 500 });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
