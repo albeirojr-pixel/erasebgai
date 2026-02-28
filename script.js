@@ -182,10 +182,9 @@ function changeLanguage() {
 }
 
 // ============================================
-// BACKGROUND REMOVAL - DIRECT GRADIO API CALL
+// HUGGING FACE INFERENCE API
 // ============================================
 
-const HF_SPACE_URL = "https://albeirojr-pixel-removedor-fondo.hf.space";
 
 let selectedFile = null;
 
@@ -284,7 +283,8 @@ processBtn.addEventListener('click', async () => {
     resultContainer.style.display = 'none';
     
     try {
-        const resultUrl = await removeBackground(selectedFile);
+        const resultBlob = await removeBackground(selectedFile);
+        const resultUrl = URL.createObjectURL(resultBlob);
         
         processing.style.display = 'none';
         resultContainer.style.display = 'block';
@@ -301,7 +301,17 @@ processBtn.addEventListener('click', async () => {
         
     } catch (error) {
         console.error('Error:', error);
-        alert('Error processing image. Please try again. The service may be waking up - wait 10 seconds and retry.');
+        let errorMessage = 'Error processing image. ';
+        
+        if (error.message.includes('loading')) {
+            errorMessage += 'The AI model is loading. Please wait 20 seconds and try again.';
+        } else if (error.message.includes('rate')) {
+            errorMessage += 'Too many requests. Please wait a moment and try again.';
+        } else {
+            errorMessage += 'Please try again.';
+        }
+        
+        alert(errorMessage);
         resetInterface();
     }
 });
@@ -319,94 +329,36 @@ function resetInterface() {
     resetUpload();
 }
 
-// Remove background using Gradio API
+// Remove background using Hugging Face Inference API
+// Remove background using our API route
 async function removeBackground(file) {
     try {
-        // Step 1: Upload file
         const formData = new FormData();
-        formData.append('files', file);
+        formData.append('image', file);
         
-        const uploadResponse = await fetch(`${HF_SPACE_URL}/upload`, {
+        const response = await fetch('/api/remove-bg', {
             method: 'POST',
             body: formData
         });
         
-        if (!uploadResponse.ok) {
-            throw new Error('Upload failed');
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error:', errorText);
+            
+            if (response.status === 503) {
+                throw new Error('Model is loading. Please wait and retry.');
+            } else if (response.status === 429) {
+                throw new Error('Rate limit exceeded. Please wait.');
+            } else {
+                throw new Error(`API request failed: ${response.status}`);
+            }
         }
         
-        const uploadResult = await uploadResponse.json();
-        const filePath = uploadResult[0];
-        
-        // Step 2: Call prediction
-        const predictResponse = await fetch(`${HF_SPACE_URL}/call/predict`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                data: [{ path: filePath }]
-            })
-        });
-        
-        if (!predictResponse.ok) {
-            throw new Error('Prediction call failed');
-        }
-        
-        const predictResult = await predictResponse.json();
-        const eventId = predictResult.event_id;
-        
-        // Step 3: Poll for result
-        const result = await pollForResult(eventId);
-        return result;
+        const blob = await response.blob();
+        return blob;
         
     } catch (error) {
-        console.error('API Error:', error);
+        console.error('Remove background error:', error);
         throw error;
     }
-}
-
-// Poll for result
-async function pollForResult(eventId) {
-    let attempts = 0;
-    const maxAttempts = 60; // 60 seconds max
-    
-    while (attempts < maxAttempts) {
-        try {
-            const response = await fetch(`${HF_SPACE_URL}/call/predict/${eventId}`);
-            
-            if (!response.ok) {
-                throw new Error('Polling failed');
-            }
-            
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n').filter(line => line.trim());
-                
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = JSON.parse(line.slice(6));
-                        
-                        if (data.msg === 'process_completed') {
-                            const outputData = data.output.data[0];
-                            return `${HF_SPACE_URL}/file=${outputData.path}`;
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Polling error:', error);
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        attempts++;
-    }
-    
-    throw new Error('Timeout waiting for result');
 }
