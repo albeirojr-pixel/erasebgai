@@ -38,7 +38,16 @@ const translations = {
         'faq3-q': 'What file formats are supported?',
         'faq3-a': 'JPG, JPEG, and PNG up to 10MB. Output is PNG with transparent background.',
         'faq4-q': 'Can I use the images commercially?',
-        'faq4-a': 'Yes, processed images are yours to use however you want without restrictions.'
+        'faq4-a': 'Yes, processed images are yours to use however you want without restrictions.',
+        'upload-title': 'Upload Your Image',
+        'upload-desc': 'Click to browse or drag & drop',
+        'btn-text': '🚀 Remove Background',
+        'processing-text': 'Processing your image...',
+        'result-title': '✨ Result - Background Removed',
+        'before-label': 'Before',
+        'after-label': 'After',
+        'download-text': '⬇️ Download Image',
+        'new-text': '🔄 Process Another'
     },
     es: {
         'hero-title': 'Removedor de Fondo IA - 100% Gratis',
@@ -78,7 +87,16 @@ const translations = {
         'faq3-q': '¿Qué formatos se soportan?',
         'faq3-a': 'JPG, JPEG y PNG hasta 10MB. El resultado es PNG con fondo transparente.',
         'faq4-q': '¿Puedo usar las imágenes comercialmente?',
-        'faq4-a': 'Sí, las imágenes procesadas son tuyas para usar como quieras sin restricciones.'
+        'faq4-a': 'Sí, las imágenes procesadas son tuyas para usar como quieras sin restricciones.',
+        'upload-title': 'Sube tu Imagen',
+        'upload-desc': 'Click para buscar o arrastra aquí',
+        'btn-text': '🚀 Eliminar Fondo',
+        'processing-text': 'Procesando tu imagen...',
+        'result-title': '✨ Resultado - Fondo Eliminado',
+        'before-label': 'Antes',
+        'after-label': 'Después',
+        'download-text': '⬇️ Descargar Imagen',
+        'new-text': '🔄 Procesar Otra'
     },
     pt: {
         'hero-title': 'Removedor de Fundo IA - 100% Grátis',
@@ -118,7 +136,16 @@ const translations = {
         'faq3-q': 'Quais formatos são suportados?',
         'faq3-a': 'JPG, JPEG e PNG até 10MB. O resultado é PNG com fundo transparente.',
         'faq4-q': 'Posso usar as imagens comercialmente?',
-        'faq4-a': 'Sim, as imagens processadas são suas para usar como quiser sem restrições.'
+        'faq4-a': 'Sim, as imagens processadas são suas para usar como quiser sem restrições.',
+        'upload-title': 'Envie sua Imagem',
+        'upload-desc': 'Clique para buscar ou arraste aqui',
+        'btn-text': '🚀 Remover Fundo',
+        'processing-text': 'Processando sua imagem...',
+        'result-title': '✨ Resultado - Fundo Removido',
+        'before-label': 'Antes',
+        'after-label': 'Depois',
+        'download-text': '⬇️ Baixar Imagem',
+        'new-text': '🔄 Processar Outra'
     }
 };
 
@@ -155,4 +182,182 @@ function changeLanguage() {
     // Actualizar meta tags
     document.querySelector('meta[name="description"]').content = trans['hero-desc'];
     document.title = trans['hero-title'];
+}
+
+// ============================================
+// BACKGROUND REMOVAL FUNCTIONALITY
+// ============================================
+
+const HF_SPACE_URL = "https://albeirojr-pixel-removedor-fondo.hf.space";
+
+let selectedFile = null;
+
+// Elements
+const uploadArea = document.getElementById('upload-area');
+const fileInput = document.getElementById('file-input');
+const uploadContent = document.getElementById('upload-content');
+const previewContainer = document.getElementById('preview-container');
+const previewImage = document.getElementById('preview-image');
+const removeBtn = document.getElementById('remove-btn');
+const processBtn = document.getElementById('process-btn');
+const processing = document.getElementById('processing');
+const resultContainer = document.getElementById('result-container');
+const originalImage = document.getElementById('original-image');
+const resultImage = document.getElementById('result-image');
+const downloadBtn = document.getElementById('download-btn');
+const newBtn = document.getElementById('new-btn');
+
+// Click to upload
+uploadArea.addEventListener('click', () => {
+    if (!selectedFile) {
+        fileInput.click();
+    }
+});
+
+// File selected
+fileInput.addEventListener('change', (e) => {
+    handleFile(e.target.files[0]);
+});
+
+// Drag and drop
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('drag-over');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('drag-over');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+    handleFile(e.dataTransfer.files[0]);
+});
+
+// Handle file
+function handleFile(file) {
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.match('image/(jpeg|jpg|png)')) {
+        alert('Please upload a JPG or PNG image');
+        return;
+    }
+    
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('Image too large. Maximum size is 10MB');
+        return;
+    }
+    
+    selectedFile = file;
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        previewImage.src = e.target.result;
+        uploadContent.style.display = 'none';
+        previewContainer.style.display = 'block';
+        processBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+}
+
+// Remove image
+removeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    resetUpload();
+});
+
+function resetUpload() {
+    selectedFile = null;
+    fileInput.value = '';
+    previewImage.src = '';
+    uploadContent.style.display = 'block';
+    previewContainer.style.display = 'none';
+    processBtn.disabled = true;
+    resultContainer.style.display = 'none';
+}
+
+// Process button
+processBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    
+    // Hide upload, show processing
+    uploadArea.style.display = 'none';
+    processBtn.style.display = 'none';
+    processing.style.display = 'block';
+    resultContainer.style.display = 'none';
+    
+    try {
+        // Call Hugging Face Gradio API
+        const result = await removeBackground(selectedFile);
+        
+        // Show results
+        processing.style.display = 'none';
+        resultContainer.style.display = 'block';
+        
+        // Display original and result
+        const originalReader = new FileReader();
+        originalReader.onload = (e) => {
+            originalImage.src = e.target.result;
+        };
+        originalReader.readAsDataURL(selectedFile);
+        
+        resultImage.src = result;
+        downloadBtn.href = result;
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error processing image. Please try again.');
+        resetInterface();
+    }
+});
+
+// New image button
+newBtn.addEventListener('click', () => {
+    resetInterface();
+});
+
+function resetInterface() {
+    uploadArea.style.display = 'block';
+    processBtn.style.display = 'block';
+    processing.style.display = 'none';
+    resultContainer.style.display = 'none';
+    resetUpload();
+}
+
+// Call Hugging Face Gradio API
+async function removeBackground(file) {
+    const formData = new FormData();
+    formData.append('data', file);
+    
+    try {
+        // Call Gradio API endpoint
+        const response = await fetch(`${HF_SPACE_URL}/api/predict`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error('API request failed');
+        }
+        
+        const result = await response.json();
+        
+        // Gradio returns the image path in the data array
+        if (result.data && result.data[0]) {
+            // Get the full image URL
+            const imagePath = result.data[0];
+            const imageUrl = `${HF_SPACE_URL}/file=${imagePath}`;
+            return imageUrl;
+        }
+        
+        throw new Error('Invalid API response');
+        
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+    }
 }

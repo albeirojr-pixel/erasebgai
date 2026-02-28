@@ -48,15 +48,55 @@
                 <!-- Código de AdSense aquí -->
             </div>
 
-            <!-- App Embed -->
+            <!-- App Interface -->
             <section class="app-container">
-                <iframe 
-                    src="https://huggingface.co/spaces/albeirojr-pixel/removedor-fondo"
-                    frameborder="0"
-                    width="100%"
-                    height="800px"
-                    loading="lazy">
-                </iframe>
+                <div class="upload-interface">
+                    <div class="upload-area" id="upload-area">
+                        <input type="file" id="file-input" accept="image/jpeg,image/jpg,image/png" hidden>
+                        <div class="upload-content" id="upload-content">
+                            <div class="upload-icon">📤</div>
+                            <h3 id="upload-title">Upload Your Image</h3>
+                            <p id="upload-desc">Click to browse or drag & drop</p>
+                            <p class="upload-formats"><small>JPG, PNG • Max 10MB</small></p>
+                        </div>
+                        <div class="preview-container" id="preview-container" style="display:none;">
+                            <img id="preview-image" src="" alt="Preview">
+                            <button class="remove-btn" id="remove-btn">✕</button>
+                        </div>
+                    </div>
+                    
+                    <button class="process-btn" id="process-btn" disabled>
+                        <span id="btn-text">🚀 Remove Background</span>
+                    </button>
+                    
+                    <div class="processing" id="processing" style="display:none;">
+                        <div class="spinner"></div>
+                        <p id="processing-text">Processing your image...</p>
+                        <p class="processing-note"><small>This usually takes 3-5 seconds</small></p>
+                    </div>
+                    
+                    <div class="result-container" id="result-container" style="display:none;">
+                        <h3 id="result-title">✨ Result - Background Removed</h3>
+                        <div class="result-images">
+                            <div class="result-image">
+                                <p><strong id="before-label">Before</strong></p>
+                                <img id="original-image" src="" alt="Original">
+                            </div>
+                            <div class="result-image">
+                                <p><strong id="after-label">After</strong></p>
+                                <img id="result-image" src="" alt="Result">
+                            </div>
+                        </div>
+                        <div class="result-actions">
+                            <a class="download-btn" id="download-btn" download="no-background.png">
+                                <span id="download-text">⬇️ Download Image</span>
+                            </a>
+                            <button class="new-btn" id="new-btn">
+                                <span id="new-text">🔄 Process Another</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Ad Space Middle -->
