@@ -1,6 +1,3 @@
-// Import Gradio Client
-import { client } from "https://cdn.jsdelivr.net/npm/@gradio/client@0.10.1/dist/index.min.js";
-
 // Traducciones
 const translations = {
     en: {
@@ -152,7 +149,7 @@ const translations = {
     }
 };
 
-// Detectar idioma del navegador al cargar
+// Detectar idioma
 window.addEventListener('DOMContentLoaded', () => {
     const userLang = navigator.language || navigator.userLanguage;
     let lang = 'en';
@@ -168,7 +165,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Cambiar idioma
-window.changeLanguage = function() {
+function changeLanguage() {
     const lang = document.getElementById('lang-select').value;
     const trans = translations[lang];
     
@@ -185,27 +182,12 @@ window.changeLanguage = function() {
 }
 
 // ============================================
-// BACKGROUND REMOVAL FUNCTIONALITY
+// BACKGROUND REMOVAL - DIRECT GRADIO API CALL
 // ============================================
 
-const HF_SPACE = "albeirojr-pixel/removedor-fondo";
+const HF_SPACE_URL = "https://albeirojr-pixel-removedor-fondo.hf.space";
 
 let selectedFile = null;
-let gradioApp = null;
-
-// Initialize Gradio client
-async function initGradioClient() {
-    if (!gradioApp) {
-        try {
-            gradioApp = await client(HF_SPACE);
-            console.log('Gradio client initialized');
-        } catch (error) {
-            console.error('Failed to initialize Gradio client:', error);
-            throw error;
-        }
-    }
-    return gradioApp;
-}
 
 // Elements
 const uploadArea = document.getElementById('upload-area');
@@ -302,7 +284,7 @@ processBtn.addEventListener('click', async () => {
     resultContainer.style.display = 'none';
     
     try {
-        const result = await removeBackground(selectedFile);
+        const resultUrl = await removeBackground(selectedFile);
         
         processing.style.display = 'none';
         resultContainer.style.display = 'block';
@@ -313,12 +295,13 @@ processBtn.addEventListener('click', async () => {
         };
         originalReader.readAsDataURL(selectedFile);
         
-        resultImage.src = result.url;
-        downloadBtn.href = result.url;
+        resultImage.src = resultUrl;
+        downloadBtn.href = resultUrl;
+        downloadBtn.download = 'no-background-' + selectedFile.name.replace(/\.[^/.]+$/, ".png");
         
     } catch (error) {
         console.error('Error:', error);
-        alert('Error processing image. The service might be starting up. Please try again in a moment.');
+        alert('Error processing image. Please try again. The service may be waking up - wait 10 seconds and retry.');
         resetInterface();
     }
 });
@@ -336,21 +319,94 @@ function resetInterface() {
     resetUpload();
 }
 
-// Call Hugging Face Gradio API using official client
+// Remove background using Gradio API
 async function removeBackground(file) {
     try {
-        const app = await initGradioClient();
+        // Step 1: Upload file
+        const formData = new FormData();
+        formData.append('files', file);
         
-        const result = await app.predict("/predict", [file]);
+        const uploadResponse = await fetch(`${HF_SPACE_URL}/upload`, {
+            method: 'POST',
+            body: formData
+        });
         
-        if (result && result.data && result.data[0]) {
-            return result.data[0];
+        if (!uploadResponse.ok) {
+            throw new Error('Upload failed');
         }
         
-        throw new Error('Invalid API response');
+        const uploadResult = await uploadResponse.json();
+        const filePath = uploadResult[0];
+        
+        // Step 2: Call prediction
+        const predictResponse = await fetch(`${HF_SPACE_URL}/call/predict`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                data: [{ path: filePath }]
+            })
+        });
+        
+        if (!predictResponse.ok) {
+            throw new Error('Prediction call failed');
+        }
+        
+        const predictResult = await predictResponse.json();
+        const eventId = predictResult.event_id;
+        
+        // Step 3: Poll for result
+        const result = await pollForResult(eventId);
+        return result;
         
     } catch (error) {
         console.error('API Error:', error);
         throw error;
     }
+}
+
+// Poll for result
+async function pollForResult(eventId) {
+    let attempts = 0;
+    const maxAttempts = 60; // 60 seconds max
+    
+    while (attempts < maxAttempts) {
+        try {
+            const response = await fetch(`${HF_SPACE_URL}/call/predict/${eventId}`);
+            
+            if (!response.ok) {
+                throw new Error('Polling failed');
+            }
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n').filter(line => line.trim());
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.slice(6));
+                        
+                        if (data.msg === 'process_completed') {
+                            const outputData = data.output.data[0];
+                            return `${HF_SPACE_URL}/file=${outputData.path}`;
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+    }
+    
+    throw new Error('Timeout waiting for result');
 }
