@@ -5,10 +5,3 @@
     "node": "18.x"
   }
 }
-```
-
-Guarda con **Ctrl + S**, luego en PowerShell:
-```
-git add .
-git commit -m "Add package.json for Node 18"
-git push origin main
