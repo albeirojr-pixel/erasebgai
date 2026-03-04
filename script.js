@@ -221,7 +221,7 @@ processBtn.addEventListener("click", async () => {
   try {
     const response = await fetch('/api/rmbg', {
    method: 'POST',
-   body: tuArchivoDeImagen
+   body: selectedFile, // <--- Aquí usamos la variable correcta
 });
 
     if (!response.ok) {
