@@ -27,7 +27,6 @@ module.exports = async function handler(req, res) {
     const buf = Buffer.from(await hfRes.arrayBuffer());
     res.setHeader("Content-Type", "image/png");
     res.status(200).send(buf);
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

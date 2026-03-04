@@ -219,7 +219,7 @@ processBtn.addEventListener("click", async () => {
   resultSection.style.display   = "none";
 
   try {
-    const response = await fetch("/api/process", {
+    const response = await fetch("/api/rmbg", {
       method: "POST",
       headers: { "Content-Type": selectedFile.type },
       body: selectedFile,
