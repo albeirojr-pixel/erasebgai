@@ -219,19 +219,17 @@ processBtn.addEventListener("click", async () => {
   resultSection.style.display   = "none";
 
   try {
-    const response = await fetch('/api/rmbg', {
-   method: 'POST',
-   body: selectedFile, // <--- Aquí usamos la variable correcta
-});
+    const response = await fetch("/api/rmbg", {
+      method: "POST",
+      body: selectedFile, // Enviamos el archivo directamente
+    });
 
     if (!response.ok) {
-      let msg = "Error processing image. Please try again.";
+      let msg = "Error processing image.";
       try {
         const data = await response.json();
         if (data.error === "model_loading") {
-          msg = "The AI model is warming up. Please wait 20 seconds and try again.";
-        } else if (data.error === "rate_limit") {
-          msg = "Too many requests. Please wait a moment and try again.";
+          msg = "AI is warming up... please wait 20 seconds and try again.";
         }
       } catch (_) {}
       throw new Error(msg);
