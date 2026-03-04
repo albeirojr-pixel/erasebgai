@@ -56,7 +56,3 @@ module.exports = function handler(req, res) {
     hfReq.end();
   });
 };
-
-module.exports.config = {
-  api: { bodyParser: false },
-};
