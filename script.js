@@ -219,10 +219,10 @@ processBtn.addEventListener("click", async () => {
   resultSection.style.display   = "none";
 
   try {
-    const response = await fetch("/api/rmbg", {
-      method: "POST",
-      body: selectedFile, // Enviamos el archivo directamente
-    });
+    const response = await fetch("/api/rmbg", { // <-- Ahora lleva /api/
+  method: "POST",
+  body: selectedFile,
+});
 
     if (!response.ok) {
       let msg = "Error processing image.";
