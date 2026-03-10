@@ -203,3 +203,40 @@
   <script src="script.js"></script>
 </body>
 </html>
+<section id="reviews">
+
+<h2>⭐ Opiniones de nuestros clientes</h2>
+
+<div id="reviews-container"></div>
+
+</section>
+
+<script>
+
+fetch("reviews.json")
+.then(res=>res.json())
+.then(data=>{
+
+const container=document.getElementById("reviews-container");
+
+data.forEach(r=>{
+
+container.innerHTML+=`
+<div class="review">
+
+<div>${"⭐".repeat(r.rating)}</div>
+
+<p>"${r.text}"</p>
+
+<strong>${r.name}</strong>
+
+<span>${r.time}</span>
+
+</div>
+`;
+
+});
+
+});
+
+</script>
