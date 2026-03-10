@@ -2,7 +2,7 @@ name: Actualizar reseñas
 
 on:
   schedule:
-  - cron: '0 9 * * 1'
+    - cron: '0 9 * * 1'
   workflow_dispatch:
 
 jobs:
@@ -22,10 +22,11 @@ jobs:
       - name: Instalar dependencias
         run: npm install
 
-      - name: Instalar Playwright y navegadores
-        run: |
-          npm install -D playwright
-          npx playwright install --with-deps chromium
+      - name: Instalar Playwright
+        run: npm install playwright
+
+      - name: Instalar Chromium
+        run: node node_modules/playwright/cli.js install chromium
 
       - name: Ejecutar scraper
         run: node scripts/scrape_reviews.js
