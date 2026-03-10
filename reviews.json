@@ -1,14 +1,37 @@
 [
   {
-    "name": "Cliente de Google",
+    "name": "Jimmy Fernando Pacheco Quintero",
     "rating": 5,
-    "text": "Excelente asesoría para elegir mi computador.",
-    "time": "Hace 1 mes"
+    "text": "Excellent service. The seller offered a good product with a warranty and was always available to collect shipping information for the purchased device. Shipping was fast, and the device arrived on time and in good condition.\nI recommend the store and the seller, who are trustworthy.",
+    "photo": "https://lh3.googleusercontent.com/a-/ALV-UjU07ODHM209wC71jrUn4gywQb4cTOdvDysP1Z3W58Xlu1Q0iOyn=s128-c0x00000000-cc-rp-mo",
+    "time": "6 months ago"
   },
   {
-    "name": "Cliente de Google",
+    "name": "Yakeline monje jimenez",
     "rating": 5,
-    "text": "Muy buena atención y asesoría por WhatsApp.",
-    "time": "Hace 2 meses"
+    "text": "This company is very reliable. I ordered the equipment on Wednesday afternoon and received it by Friday at noon. They are very professional and professional. They even offer gifts. So, friends, I encourage you to order your equipment through them. It's very secure.",
+    "photo": "https://lh3.googleusercontent.com/a/ACg8ocLdcRWVecc6zPm-1djcrDC_KwK6YOg6U6-Gg4tlj9WO56C_lg=s128-c0x00000000-cc-rp-mo",
+    "time": "a year ago"
+  },
+  {
+    "name": "Nayibe Cardenas",
+    "rating": 5,
+    "text": "Excellent service and description of the equipment I was interested in... 100% recommended and super fast delivery 👏👍",
+    "photo": "https://lh3.googleusercontent.com/a/ACg8ocLLV1QMnWyEeRr2MgwQzGeQ1eZgeMQN4N1U6gODCgkvQnuxMg=s128-c0x00000000-cc-rp-mo",
+    "time": "a month ago"
+  },
+  {
+    "name": "Ediaon de jesus Muñoz florez",
+    "rating": 5,
+    "text": "Excellent service. Trustworthy seller. The products are always of the quality advertised. I'm very satisfied with my purchases: an Asus Vivobook PC and a Redmi Pad SE tablet.",
+    "photo": "https://lh3.googleusercontent.com/a-/ALV-UjU8aOQppQRVvmovcT23KU0FPutjwxod5XefG9z5pICpZWjpUEo=s128-c0x00000000-cc-rp-mo",
+    "time": "7 months ago"
+  },
+  {
+    "name": "Marinela Tafur",
+    "rating": 5,
+    "text": "I thank Innovaciones Digital and Don Albeiro for their excellent service and prompt response to my request. I am very satisfied with the product I purchased. Many blessings 🙏.",
+    "photo": "https://lh3.googleusercontent.com/a/ACg8ocIBeUXX-hMZq0sHBqpmeehoPjLcZnLVHH406ZCJSbBvA16F6w=s128-c0x00000000-cc-rp-mo",
+    "time": "3 months ago"
   }
 ]
