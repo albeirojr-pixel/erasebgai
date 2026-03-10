@@ -1,31 +1,30 @@
 name: Actualizar reseñas
 
 on:
-  schedule:
-    - cron: "0 8 * * *"
   workflow_dispatch:
+  schedule:
+    - cron: "0 */12 * * *"
 
 jobs:
   update:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Descargar repositorio
-      uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
 
-    - name: Instalar Node
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
+      - name: Run script
+        run: node scripts/fetch_reviews.js
 
-    - name: Ejecutar script
-      run: node scripts/fetch_reviews.js
-
-    - name: Guardar cambios
-      run: |
-        git config --global user.name "bot"
-        git config --global user.email "bot@github.com"
-        git add reviews.json
-        git commit -m "actualizar reseñas" || echo "sin cambios"
-        git push
+      - name: Commit changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add reviews.json
+          git commit -m "Actualizar reseñas" || echo "No changes"
+          git push
