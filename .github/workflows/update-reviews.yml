@@ -20,13 +20,12 @@ jobs:
           node-version: 20
 
       - name: Instalar dependencias
-        run: |
-          npm install
-          npm install playwright
+        run: npm install
 
-      - name: Instalar navegador
+      - name: Instalar Playwright y navegadores
         run: |
-          npx playwright install chromium
+          npm install -D playwright
+          npx playwright install --with-deps chromium
 
       - name: Ejecutar scraper
         run: node scripts/scrape_reviews.js
