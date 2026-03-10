@@ -21,24 +21,34 @@ console.log("Abriendo Google Maps...");
 
 await page.goto(url, { waitUntil: "domcontentloaded" });
 
-await page.waitForTimeout(5000);
+await page.waitForTimeout(4000);
 
-console.log("Abriendo panel de reseñas...");
+console.log("Abriendo reseñas...");
 
 await page.click('button[jsaction*="pane.reviewChart.moreReviews"]');
 
-await page.waitForTimeout(5000);
+await page.waitForTimeout(4000);
 
-console.log("Cargando reseñas...");
-
-// Scroll inteligente para cargar muchas reseñas
 const scrollContainer = await page.waitForSelector('.m6QErb[role="feed"]');
 
-for (let i = 0; i < 40; i++) {
+let previousHeight = 0;
 
-await scrollContainer.evaluate(el => el.scrollBy(0, 2000));
+console.log("Cargando muchas reseñas...");
 
-await page.waitForTimeout(1500);
+for (let i = 0; i < 80; i++) {
+
+const height = await scrollContainer.evaluate(el => el.scrollHeight);
+
+if (height === previousHeight) {
+console.log("No hay más reseñas para cargar");
+break;
+}
+
+previousHeight = height;
+
+await scrollContainer.evaluate(el => el.scrollBy(0, 3000));
+
+await page.waitForTimeout(2000);
 
 }
 
@@ -59,8 +69,7 @@ n.querySelector(".wiI7pd")?.innerText || "";
 const ratingText =
 n.querySelector(".kvMYJc")?.getAttribute("aria-label") || "";
 
-const rating =
-parseInt(ratingText);
+const rating = parseInt(ratingText);
 
 const date =
 n.querySelector(".rsqaWe")?.innerText || "";
@@ -78,7 +87,7 @@ date
 
 console.log("Reseñas encontradas:", reviews.length);
 
-// Leer reseñas existentes
+// leer caché existente
 let existing = [];
 
 if (fs.existsSync("reviews.json")) {
@@ -87,7 +96,7 @@ existing = JSON.parse(fs.readFileSync("reviews.json"));
 
 }
 
-// Crear índice para evitar duplicados
+// evitar duplicados
 const existingTexts = new Set(existing.map(r => r.text));
 
 const merged = [...existing];
@@ -102,7 +111,7 @@ merged.push(r);
 
 });
 
-// Guardar archivo
+// guardar
 fs.writeFileSync(
 "reviews.json",
 JSON.stringify(merged, null, 2)
