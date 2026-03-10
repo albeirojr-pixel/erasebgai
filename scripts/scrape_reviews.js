@@ -1,10 +1,9 @@
 import { chromium } from "playwright";
 import fs from "fs";
 
-const url =
-"https://www.google.com/maps/place/Innovación+Digital+JR+Tech/?hl=es";
+const url = "https://www.google.com/maps/place/Innovación+Digital+JR+Tech/?hl=es";
 
-async function scrape() {
+async function scrape(){
 
 const browser = await chromium.launch({
 headless: true
@@ -20,37 +19,38 @@ const page = await context.newPage();
 
 console.log("Abriendo Google Maps...");
 
-await page.goto(url, { waitUntil: "domcontentloaded" });
+await page.goto(url,{waitUntil:"domcontentloaded"});
 
 await page.waitForTimeout(5000);
 
-console.log("Buscando contenedor de reseñas...");
+console.log("Buscando botón de reseñas...");
 
-const scrollContainer = await page.waitForSelector(
-'.m6QErb[role="feed"]',
-{ timeout: 30000 }
-);
+const reviewButton = page.locator('button:has-text("reseñas"), button:has-text("Reviews")');
 
-console.log("Cargando reseñas con scroll inteligente...");
+await reviewButton.first().waitFor({timeout:30000});
+
+await reviewButton.first().click();
+
+console.log("Esperando contenedor de reseñas...");
+
+const scrollContainer = await page.waitForSelector('.m6QErb[role="feed"]');
+
+console.log("Cargando reseñas...");
 
 let previousHeight = 0;
 
-for (let i = 0; i < 80; i++) {
+for(let i=0;i<60;i++){
 
-const height = await scrollContainer.evaluate(
-el => el.scrollHeight
-);
+const height = await scrollContainer.evaluate(el=>el.scrollHeight);
 
-if (height === previousHeight) {
-console.log("No hay más reseñas nuevas");
+if(height===previousHeight){
+console.log("No hay más reseñas para cargar");
 break;
 }
 
 previousHeight = height;
 
-await scrollContainer.evaluate(
-el => el.scrollBy(0, 3000)
-);
+await scrollContainer.evaluate(el=>el.scrollBy(0,3000));
 
 await page.waitForTimeout(2000);
 
@@ -58,26 +58,21 @@ await page.waitForTimeout(2000);
 
 console.log("Extrayendo reseñas...");
 
-const reviews = await page.evaluate(() => {
+const reviews = await page.evaluate(()=>{
 
 const nodes = document.querySelectorAll(".jftiEf");
 
-return Array.from(nodes).map(n => {
+return Array.from(nodes).map(n=>{
 
-const name =
-n.querySelector(".d4r55")?.innerText || "";
+const name = n.querySelector(".d4r55")?.innerText || "";
 
-const text =
-n.querySelector(".wiI7pd")?.innerText || "";
+const text = n.querySelector(".wiI7pd")?.innerText || "";
 
-const ratingText =
-n.querySelector(".kvMYJc")?.getAttribute("aria-label") || "";
+const ratingText = n.querySelector(".kvMYJc")?.getAttribute("aria-label") || "";
 
-const rating =
-parseInt(ratingText);
+const rating = parseInt(ratingText);
 
-const date =
-n.querySelector(".rsqaWe")?.innerText || "";
+const date = n.querySelector(".rsqaWe")?.innerText || "";
 
 return {
 name,
@@ -90,46 +85,27 @@ date
 
 });
 
-console.log("Reseñas encontradas:", reviews.length);
+console.log("Reseñas encontradas:",reviews.length);
 
-// leer reseñas existentes
-let existing = [];
+let existing=[];
 
-if (fs.existsSync("reviews.json")) {
-
-existing = JSON.parse(
-fs.readFileSync("reviews.json")
-);
-
+if(fs.existsSync("reviews.json")){
+existing = JSON.parse(fs.readFileSync("reviews.json"));
 }
 
-// evitar duplicados
-const existingTexts = new Set(
-existing.map(r => r.text)
-);
+const existingTexts = new Set(existing.map(r=>r.text));
 
-const merged = [...existing];
+const merged=[...existing];
 
-reviews.forEach(r => {
-
-if (r.text && !existingTexts.has(r.text)) {
-
+reviews.forEach(r=>{
+if(r.text && !existingTexts.has(r.text)){
 merged.push(r);
-
 }
-
 });
 
-// guardar archivo
-fs.writeFileSync(
-"reviews.json",
-JSON.stringify(merged, null, 2)
-);
+fs.writeFileSync("reviews.json",JSON.stringify(merged,null,2));
 
-console.log(
-"Total reseñas guardadas:",
-merged.length
-);
+console.log("Total reseñas guardadas:",merged.length);
 
 await browser.close();
 
