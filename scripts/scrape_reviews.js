@@ -1,7 +1,8 @@
 import { chromium } from "playwright";
 import fs from "fs";
 
-const url = "https://www.google.com/maps/place/Innovación+Digital+JR+Tech/?hl=es";
+const url =
+"https://www.google.com/maps/place/Innovación+Digital+JR+Tech/?hl=es";
 
 async function scrape() {
 
@@ -21,30 +22,35 @@ console.log("Abriendo Google Maps...");
 
 await page.goto(url, { waitUntil: "domcontentloaded" });
 
-await page.waitForTimeout(4000);
+await page.waitForTimeout(5000);
 
-console.log("Buscando botón de reseñas...");
+console.log("Buscando contenedor de reseñas...");
 
-const reviewButton = page.locator('button:has-text("reseñas"), button:has-text("Reviews")');
+const scrollContainer = await page.waitForSelector(
+'.m6QErb[role="feed"]',
+{ timeout: 30000 }
+);
 
-await reviewButton.first().waitFor({timeout:20000});
+console.log("Cargando reseñas con scroll inteligente...");
 
-await reviewButton.first().click();
-
-console.log("Cargando muchas reseñas...");
+let previousHeight = 0;
 
 for (let i = 0; i < 80; i++) {
 
-const height = await scrollContainer.evaluate(el => el.scrollHeight);
+const height = await scrollContainer.evaluate(
+el => el.scrollHeight
+);
 
 if (height === previousHeight) {
-console.log("No hay más reseñas para cargar");
+console.log("No hay más reseñas nuevas");
 break;
 }
 
 previousHeight = height;
 
-await scrollContainer.evaluate(el => el.scrollBy(0, 3000));
+await scrollContainer.evaluate(
+el => el.scrollBy(0, 3000)
+);
 
 await page.waitForTimeout(2000);
 
@@ -67,7 +73,8 @@ n.querySelector(".wiI7pd")?.innerText || "";
 const ratingText =
 n.querySelector(".kvMYJc")?.getAttribute("aria-label") || "";
 
-const rating = parseInt(ratingText);
+const rating =
+parseInt(ratingText);
 
 const date =
 n.querySelector(".rsqaWe")?.innerText || "";
@@ -85,17 +92,21 @@ date
 
 console.log("Reseñas encontradas:", reviews.length);
 
-// leer caché existente
+// leer reseñas existentes
 let existing = [];
 
 if (fs.existsSync("reviews.json")) {
 
-existing = JSON.parse(fs.readFileSync("reviews.json"));
+existing = JSON.parse(
+fs.readFileSync("reviews.json")
+);
 
 }
 
 // evitar duplicados
-const existingTexts = new Set(existing.map(r => r.text));
+const existingTexts = new Set(
+existing.map(r => r.text)
+);
 
 const merged = [...existing];
 
@@ -109,13 +120,16 @@ merged.push(r);
 
 });
 
-// guardar
+// guardar archivo
 fs.writeFileSync(
 "reviews.json",
 JSON.stringify(merged, null, 2)
 );
 
-console.log("Total reseñas guardadas:", merged.length);
+console.log(
+"Total reseñas guardadas:",
+merged.length
+);
 
 await browser.close();
 
