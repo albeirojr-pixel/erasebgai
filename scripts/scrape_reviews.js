@@ -7,7 +7,11 @@ const url =
 async function scrape(){
 
 const browser = await chromium.launch({
-headless:true
+headless:true,
+args:[
+"--no-sandbox",
+"--disable-blink-features=AutomationControlled"
+]
 });
 
 const context = await browser.newContext({
@@ -22,11 +26,33 @@ console.log("Abriendo Google Maps...");
 
 await page.goto(url,{waitUntil:"domcontentloaded"});
 
-await page.waitForTimeout(6000);
+await page.waitForTimeout(8000);
 
-console.log("Abriendo panel de reseñas...");
+console.log("Intentando abrir reseñas...");
 
-await page.locator('a[href*="reviews"]').first().click();
+// intenta varios métodos
+
+try{
+await page.getByRole("tab",{name:/reseñas|reviews/i}).click();
+}catch{
+
+try{
+await page.getByText(/reseñas|reviews/i).first().click();
+}catch{
+
+console.log("No se pudo abrir pestaña, intentando forzar panel...");
+
+await page.evaluate(()=>{
+
+const rating = document.querySelector('[aria-label*="estrella"]');
+
+if(rating) rating.click();
+
+});
+
+}
+
+}
 
 await page.waitForTimeout(6000);
 
@@ -37,19 +63,19 @@ const scrollContainer = await page.waitForSelector(
 {timeout:60000}
 );
 
-console.log("Cargando reseñas con scroll...");
+console.log("Cargando reseñas...");
 
 let previousHeight = 0;
 
-for(let i=0;i<120;i++){
+for(let i=0;i<150;i++){
 
 const height = await scrollContainer.evaluate(
-el => el.scrollHeight
+el=>el.scrollHeight
 );
 
-if(height === previousHeight){
+if(height===previousHeight){
 
-console.log("No hay más reseñas nuevas");
+console.log("No hay más reseñas");
 
 break;
 
@@ -58,7 +84,7 @@ break;
 previousHeight = height;
 
 await scrollContainer.evaluate(
-el => el.scrollBy(0,3000)
+el=>el.scrollBy(0,4000)
 );
 
 await page.waitForTimeout(2000);
@@ -88,7 +114,7 @@ parseInt(ratingText);
 const date =
 n.querySelector(".rsqaWe")?.innerText || "";
 
-return {
+return{
 name,
 text,
 rating,
@@ -101,10 +127,10 @@ date
 
 console.log("Reseñas encontradas:",reviews.length);
 
-let existing = [];
+let existing=[];
 
 if(fs.existsSync("reviews.json")){
-existing = JSON.parse(
+existing=JSON.parse(
 fs.readFileSync("reviews.json")
 );
 }
@@ -112,14 +138,12 @@ fs.readFileSync("reviews.json")
 const existingTexts =
 new Set(existing.map(r=>r.text));
 
-const merged = [...existing];
+const merged=[...existing];
 
 reviews.forEach(r=>{
 
 if(r.text && !existingTexts.has(r.text)){
-
 merged.push(r);
-
 }
 
 });
