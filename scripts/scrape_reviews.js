@@ -22,43 +22,43 @@ console.log("Abriendo Google Maps...");
 
 await page.goto(url,{waitUntil:"domcontentloaded"});
 
-await page.waitForTimeout(5000);
+await page.waitForTimeout(6000);
 
-console.log("Buscando pestaña de reseñas...");
+console.log("Abriendo panel de reseñas...");
 
-// ESTE selector coincide con la pestaña que mostraste en la imagen
-await page.getByText("Reseñas").first().click();
+await page.locator('a[href*="reviews"]').first().click();
 
-await page.waitForTimeout(5000);
+await page.waitForTimeout(6000);
 
-console.log("Esperando contenedor de reseñas...");
+console.log("Buscando contenedor de reseñas...");
 
 const scrollContainer = await page.waitForSelector(
-'.m6QErb[role="feed"]'
+'.m6QErb[role="feed"]',
+{timeout:60000}
 );
 
 console.log("Cargando reseñas con scroll...");
 
-let previousHeight=0;
+let previousHeight = 0;
 
-for(let i=0;i<80;i++){
+for(let i=0;i<120;i++){
 
 const height = await scrollContainer.evaluate(
-el=>el.scrollHeight
+el => el.scrollHeight
 );
 
-if(height===previousHeight){
+if(height === previousHeight){
 
-console.log("No hay más reseñas");
+console.log("No hay más reseñas nuevas");
 
 break;
 
 }
 
-previousHeight=height;
+previousHeight = height;
 
 await scrollContainer.evaluate(
-el=>el.scrollBy(0,3000)
+el => el.scrollBy(0,3000)
 );
 
 await page.waitForTimeout(2000);
@@ -69,7 +69,7 @@ console.log("Extrayendo reseñas...");
 
 const reviews = await page.evaluate(()=>{
 
-const nodes=document.querySelectorAll(".jftiEf");
+const nodes = document.querySelectorAll(".jftiEf");
 
 return Array.from(nodes).map(n=>{
 
@@ -101,7 +101,7 @@ date
 
 console.log("Reseñas encontradas:",reviews.length);
 
-let existing=[];
+let existing = [];
 
 if(fs.existsSync("reviews.json")){
 existing = JSON.parse(
@@ -112,12 +112,14 @@ fs.readFileSync("reviews.json")
 const existingTexts =
 new Set(existing.map(r=>r.text));
 
-const merged=[...existing];
+const merged = [...existing];
 
 reviews.forEach(r=>{
 
 if(r.text && !existingTexts.has(r.text)){
+
 merged.push(r);
+
 }
 
 });
