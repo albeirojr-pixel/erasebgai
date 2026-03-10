@@ -1,37 +1,38 @@
 name: Actualizar reseñas
 
-permissions:
-  contents: write
-
 on:
-  workflow_dispatch:
   schedule:
-    - cron: "0 */12 * * *"
+    - cron: '0 9 * * *'
+  workflow_dispatch:
 
 jobs:
-  update:
+  scrape:
     runs-on: ubuntu-latest
 
     steps:
 
-      - name: Checkout repository
+      - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Instalar Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Run script
-        run: node scripts/scrape_reviews.js
-        env:
-          GOOGLE_MAPS_KEY: ${{ secrets.GOOGLE_MAPS_KEY }}
+      - name: Instalar dependencias
+        run: npm install
 
-      - name: Commit changes
+      - name: Instalar navegador Playwright
+        run: npx playwright install chromium
+
+      - name: Ejecutar scraper
+        run: node scripts/scrape_reviews.js
+
+      - name: Guardar cambios
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add reviews.json
-          git commit -m "Actualizar reseñas" || echo "No changes"
+          git commit -m "Actualizar reseñas" || echo "Sin cambios"
           git pull --rebase
           git push
