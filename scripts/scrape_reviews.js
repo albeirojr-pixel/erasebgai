@@ -23,15 +23,13 @@ await page.goto(url, { waitUntil: "domcontentloaded" });
 
 await page.waitForTimeout(4000);
 
-console.log("Abriendo reseñas...");
+console.log("Buscando botón de reseñas...");
 
-await page.click('button[jsaction*="pane.reviewChart.moreReviews"]');
+const reviewButton = page.locator('button:has-text("reseñas"), button:has-text("Reviews")');
 
-await page.waitForTimeout(4000);
+await reviewButton.first().waitFor({timeout:20000});
 
-const scrollContainer = await page.waitForSelector('.m6QErb[role="feed"]');
-
-let previousHeight = 0;
+await reviewButton.first().click();
 
 console.log("Cargando muchas reseñas...");
 
