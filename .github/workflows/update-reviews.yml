@@ -23,7 +23,7 @@ jobs:
           node-version: 20
 
       - name: Run script
-        run: node scripts/fetch_reviews.js
+        run: node scripts/scrape_reviews.js
         env:
           GOOGLE_MAPS_KEY: ${{ secrets.GOOGLE_MAPS_KEY }}
 
