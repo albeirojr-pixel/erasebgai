@@ -1,12 +1,14 @@
 import { chromium } from "playwright";
 import fs from "fs";
 
-const url = "https://www.google.com/maps/place/Innovación+Digital+JR+Tech/";
+const url = "https://www.google.com/maps/place/Innovación+Digital+JR+Tech/?hl=es";
 
 async function scrape(){
 
 const browser = await chromium.launch({headless:true});
-const page = await browser.newPage();
+const page = await browser.newPage({
+locale: "es-ES"
+});
 
 await page.goto(url);
 
